@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Word Scramble Game</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Trebuchet MS', sans-serif;
+      background: linear-gradient(135deg, #ff6a00, #ee0979, #00c9ff, #92fe9d);
+      background-size: 400% 400%;
+      animation: gradientMove 12s ease infinite;
+      color: #fff;
+    }
+
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .container {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(12px);
+      padding: 40px;
+      border-radius: 20px;
+      text-align: center;
+      width: 420px;
+      box-shadow: 0px 8px 32px rgba(0,0,0,0.3);
+    }
+
+    h1 {
+      font-size: 32px;
+      margin-bottom: 20px;
+      color: #ffeb3b;
+      text-shadow: 2px 2px 6px #000;
+    }
+
+    button {
+      padding: 12px 20px;
+      margin: 10px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      transform: scale(1.1);
+      box-shadow: 0px 4px 15px rgba(0,0,0,0.4);
+    }
+
+    .easy { background: #4caf50; color: white; }
+    .medium { background: #ff9800; color: white; }
+    .hard { background: #f44336; color: white; }
+    .check { background: #2196f3; color: white; }
+
+    #word {
+      font-size: 30px;
+      margin: 20px 0;
+      font-weight: bold;
+      color: #00e6e6;
+      text-shadow: 1px 1px 6px #000;
+    }
+
+    input {
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: none;
+      width: 80%;
+      margin: 10px 0;
+      text-align: center;
+      outline: none;
+      box-shadow: inset 0px 2px 6px rgba(0,0,0,0.3);
+    }
+
+    #message {
+      font-size: 20px;
+      margin-top: 15px;
+      font-weight: bold;
+      min-height: 24px;
+    }
+
+    #score, #timer {
+      font-size: 18px;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+
+    #score { color: #ffeb3b; }
+    #timer { color: #00ff88; }
+    #loading { color: #ffeb3b; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎮 Word Scramble Game 🎮</h1>
+
+    <p>Select Difficulty:</p>
+    <button class="easy" onclick="setDifficulty('easy')">Easy</button>
+    <button class="medium" onclick="setDifficulty('medium')">Medium</button>
+    <button class="hard" onclick="setDifficulty('hard')">Hard</button>
+
+    <p id="loading">⏳ Loading words... please wait</p>
+
+    <p id="word"></p>
+    <input type="text" id="guess" placeholder="Type your guess here" disabled>
+    <br>
+    <button class="check" onclick="checkWord()" disabled id="checkBtn">Submit</button>
+
+    <p id="message"></p>
+    <p>⭐ Score: <span id="score">0</span></p>
+    <p>⏳ Time Left: <span id="timer">60</span> seconds</p>
+  </div>
+
+  <script>
+    let easyWords = [], mediumWords = [], hardWords = [];
+    let wordList = [], currentWord = "", score = 0, difficulty = "";
+    let timeLeft = 60, timerInterval;
+
+    // 🔹 Fetch words from API
+    fetch("https://random-word-api.herokuapp.com/word?number=1000")
+      .then(res => res.json())
+      .then(words => {
+        easyWords = words.filter(w => w.length <= 4).slice(0, 300);
+        mediumWords = words.filter(w => w.length > 4 && w.length <= 7).slice(0, 350);
+        hardWords = words.filter(w => w.length > 7).slice(0, 350);
+
+        document.getElementById("loading").innerText = "✅ Words loaded! Choose a difficulty.";
+      })
+      .catch(err => {
+        document.getElementById("loading").innerText = "❌ Failed to load words. Refresh page.";
+        console.error(err);
+      });
+
+    function setDifficulty(level) {
+      if (easyWords.length === 0 && mediumWords.length === 0 && hardWords.length === 0) {
+        alert("⚠️ Words are still loading. Please wait!");
+        return;
+      }
+
+      difficulty = level;
+      if (level === "easy") wordList = [...easyWords];
+      else if (level === "medium") wordList = [...mediumWords];
+      else if (level === "hard") wordList = [...hardWords];
+
+      shuffleArray(wordList);
+      score = 0;
+      document.getElementById("score").innerText = score;
+      document.getElementById("guess").disabled = false;
+      document.getElementById("checkBtn").disabled = false;
+
+      nextWord(); // Start first word with its timer
+    }
+
+    function updateTimer() {
+      if (timeLeft <= 0) {
+        clearInterval(timerInterval);
+        document.getElementById("message").innerText = `⏰ Time's up! Correct word: ${currentWord}`;
+        document.getElementById("message").style.color = "#f44336";
+        setTimeout(nextWord, 1000);
+      } else {
+        document.getElementById("timer").innerText = timeLeft;
+        timeLeft--;
+      }
+    }
+
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }
+
+    function scramble(word) {
+      return word.split("").sort(() => Math.random() - 0.5).join("");
+    }
+
+    function nextWord() {
+      if (wordList.length === 0) {
+        document.getElementById("word").innerText = "🎉 You completed all words!";
+        document.getElementById("guess").disabled = true;
+        document.getElementById("checkBtn").disabled = true;
+        clearInterval(timerInterval);
+        return;
+      }
+      currentWord = wordList.pop();
+      document.getElementById("word").innerText = scramble(currentWord);
+      document.getElementById("guess").value = "";
+      document.getElementById("message").innerText = "";
+
+      // 🔹 Timer reset for each word
+      clearInterval(timerInterval);
+      timeLeft = 60;
+      document.getElementById("timer").innerText = timeLeft;
+      timerInterval = setInterval(updateTimer, 1000);
+    }
+
+    function checkWord() {
+      clearInterval(timerInterval); // Stop timer when user submits
+      let guess = document.getElementById("guess").value.trim().toLowerCase();
+      if (guess === currentWord.toLowerCase()) {
+        score++;
+        document.getElementById("message").innerText = "✅ Correct!";
+        document.getElementById("message").style.color = "#4caf50";
+      } else {
+        document.getElementById("message").innerText = `❌ Wrong! Correct word: ${currentWord}`;
+        document.getElementById("message").style.color = "#f44336";
+      }
+      document.getElementById("score").innerText = score;
+      setTimeout(nextWord, 1000);
+    }
+  </script>
+</body>
+</html>
