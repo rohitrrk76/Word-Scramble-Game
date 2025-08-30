@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>Word Scramble Game</title>
@@ -14,24 +15,32 @@
       font-family: 'Trebuchet MS', sans-serif;
       background: linear-gradient(135deg, #ff6a00, #ee0979, #00c9ff, #92fe9d);
       background-size: 400% 400%;
-      animation: gradientMove 12s ease infinite;
+      /* animation: gradientMove 12s ease infinite; */
       color: #fff;
     }
 
     @keyframes gradientMove {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+      0% {
+        background-position: 0% 50%;
+      }
+
+      50% {
+        background-position: 100% 50%;
+      }
+
+      100% {
+        background-position: 0% 50%;
+      }
     }
 
     .container {
-      background: rgba(255,255,255,0.1);
+      background: linear-gradient(135deg, rgb(167, 226, 95), rgb(31, 192, 52));
       backdrop-filter: blur(12px);
       padding: 40px;
       border-radius: 20px;
       text-align: center;
       width: 420px;
-      box-shadow: 0px 8px 32px rgba(0,0,0,0.3);
+      box-shadow: 0px 8px 32px rgba(0, 0, 0, 0.3);
     }
 
     h1 {
@@ -54,13 +63,28 @@
 
     button:hover {
       transform: scale(1.1);
-      box-shadow: 0px 4px 15px rgba(0,0,0,0.4);
+      box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.4);
     }
 
-    .easy { background: #4caf50; color: white; }
-    .medium { background: #ff9800; color: white; }
-    .hard { background: #f44336; color: white; }
-    .check { background: #2196f3; color: white; }
+    .easy {
+      background: #4caf50;
+      color: white;
+    }
+
+    .medium {
+      background: #ff9800;
+      color: white;
+    }
+
+    .hard {
+      background: #f44336;
+      color: white;
+    }
+
+    .check {
+      background: #2196f3;
+      color: white;
+    }
 
     #word {
       font-size: 30px;
@@ -79,7 +103,7 @@
       margin: 10px 0;
       text-align: center;
       outline: none;
-      box-shadow: inset 0px 2px 6px rgba(0,0,0,0.3);
+      box-shadow: inset 0px 2px 6px rgba(0, 0, 0, 0.3);
     }
 
     #message {
@@ -89,68 +113,51 @@
       min-height: 24px;
     }
 
-    #score, #timer {
+    #score,
+    #timer {
       font-size: 18px;
       margin-top: 15px;
       font-weight: bold;
     }
 
-    #score { color: #ffeb3b; }
-    #timer { color: #00ff88; }
-    #loading { color: #ffeb3b; font-weight: bold; }
+    #score {
+      color: #ffeb3b;
+    }
+
+    #timer {
+      color: #00ff88;
+    }
+
+    #loading {
+      color: #ffeb3b;
+      font-weight: bold;
+    }
   </style>
 </head>
+
 <body>
-  <div class="container">
-    <h1>🎮 Word Scramble Game 🎮</h1>
+  <script type="module">
+    import { wordSets } from '/wordList.js';  // Importing wordSets from wordList.js
 
-    <p>Select Difficulty:</p>
-    <button class="easy" onclick="setDifficulty('easy')">Easy</button>
-    <button class="medium" onclick="setDifficulty('medium')">Medium</button>
-    <button class="hard" onclick="setDifficulty('hard')">Hard</button>
-
-    <p id="loading">⏳ Loading words... please wait</p>
-
-    <p id="word"></p>
-    <input type="text" id="guess" placeholder="Type your guess here" disabled>
-    <br>
-    <button class="check" onclick="checkWord()" disabled id="checkBtn">Submit</button>
-
-    <p id="message"></p>
-    <p>⭐ Score: <span id="score">0</span></p>
-    <p>⏳ Time Left: <span id="timer">60</span> seconds</p>
-  </div>
-
-  <script>
-    let easyWords = [], mediumWords = [], hardWords = [];
     let wordList = [], currentWord = "", score = 0, difficulty = "";
     let timeLeft = 60, timerInterval;
 
-    // 🔹 Fetch words from API
-    fetch("https://random-word-api.herokuapp.com/word?number=1000")
-      .then(res => res.json())
-      .then(words => {
-        easyWords = words.filter(w => w.length <= 4).slice(0, 300);
-        mediumWords = words.filter(w => w.length > 4 && w.length <= 7).slice(0, 350);
-        hardWords = words.filter(w => w.length > 7).slice(0, 350);
+    // 🔹 Initialize the words once the wordSets is loaded
+    const { easy, medium, hard } = wordSets;
 
-        document.getElementById("loading").innerText = "✅ Words loaded! Choose a difficulty.";
-      })
-      .catch(err => {
-        document.getElementById("loading").innerText = "❌ Failed to load words. Refresh page.";
-        console.error(err);
-      });
+
+    // document.getElementById("loading").innerText = "✅ Words loaded! Choose a difficulty.";
 
     function setDifficulty(level) {
-      if (easyWords.length === 0 && mediumWords.length === 0 && hardWords.length === 0) {
+      if (!easy.length && !medium.length && !hard.length) {
         alert("⚠️ Words are still loading. Please wait!");
         return;
       }
 
       difficulty = level;
-      if (level === "easy") wordList = [...easyWords];
-      else if (level === "medium") wordList = [...mediumWords];
-      else if (level === "hard") wordList = [...hardWords];
+      if (level === "easy") wordList = [...easy];
+      else if (level === "medium") wordList = [...medium];
+      else if (level === "hard") wordList = [...hard];
 
       shuffleArray(wordList);
       score = 0;
@@ -160,6 +167,7 @@
 
       nextWord(); // Start first word with its timer
     }
+   
 
     function updateTimer() {
       if (timeLeft <= 0) {
@@ -218,6 +226,39 @@
       document.getElementById("score").innerText = score;
       setTimeout(nextWord, 1000);
     }
+    document.querySelector(".easy").addEventListener("click", () => setDifficulty("easy"));
+document.querySelector(".medium").addEventListener("click", () => setDifficulty("medium"));
+document.querySelector(".hard").addEventListener("click", () => setDifficulty("hard"));
+document.getElementById("checkBtn").addEventListener("click", checkWord);
+ document.getElementById("guess").addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      checkWord();
+    }
+  });
   </script>
+  <div class="container">
+    <h1>🎮 Word Scramble Game 🎮</h1>
+
+    <p>Select Difficulty:</p>
+    <button class="easy">Easy</button>
+    <button class="medium">Medium</button>
+    <button class="hard" >Hard</button>
+
+    <p id="loading">⏳ Loading words... please wait</p>
+
+    <p id="word"></p>
+    <input type="text" id="guess" placeholder="Type your guess here" disabled>
+    <br>
+    <button class="check" onclick="checkWord()" disabled id="checkBtn">Submit</button>
+
+    <p id="message"></p>
+    <p>⭐ Score: <span id="score">0</span></p>
+    <p>⏳ Time Left: <span id="timer">60</span> seconds</p>
+  </div>
+
+
+
+
 </body>
+
 </html>
