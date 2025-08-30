@@ -127,7 +127,7 @@
     let timeLeft = 60, timerInterval;
 
     // 🔹 Fetch words from API
-    // fetch("https://random-word-api.herokuapp.com/word?number=1000")
+    fetch("https://random-word-api.herokuapp.com/word?number=1000")
       .then(res => res.json())
       .then(words => {
         easyWords = words.filter(w => w.length <= 4).slice(0, 300);
